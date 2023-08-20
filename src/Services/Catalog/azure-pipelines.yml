@@ -6,12 +6,10 @@ trigger:
 
 jobs:
 - job: BuildQualityChecks
+  displayName: 'Build Quality Checks'
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
-  - task: UseDotNet@2
-    inputs:
-      version: '3.x'
   - task: UseDotNet@2
     displayName: 'Install .NET Core SDK'
     inputs:
@@ -19,20 +17,20 @@ jobs:
       performMultiLevelLookup: true
       includePreviewVersions: true
   - task: DotNetCoreCLI@2
-    displayName: Restore
+    displayName: 'Restore dependencies and tools'
     inputs:
       command: restore
       projects: 'src/Services/Catalog/Catalog.API/Catalog.API.csproj'
       nugetConfigPath: 'src/NuGet.config'
   - task: DotNetCoreCLI@2
-    displayName: Build
+    displayName: 'Build a project and dependencies'
     inputs:
       command: build
       projects: 'src/Services/Catalog/Catalog.API/Catalog.API.csproj'
       arguments: '--configuration debug'
 
   - task: DotNetCoreCLI@2
-    displayName: 'dotnet test'
+    displayName: 'Execute unit tests.'
     inputs:
       command: 'test'
       arguments: '--configuration debug --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
