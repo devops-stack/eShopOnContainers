@@ -1,0 +1,53 @@
+trigger:
+  branches:
+    include:
+    - main
+    - dev
+
+jobs:
+- job: BuildQualityChecks
+  displayName: 'Build Quality Checks'
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  
+  - task: UseDotNet@2
+    displayName: 'Install .NET Core SDK'
+    inputs:
+      version: 3.x
+      performMultiLevelLookup: true
+      includePreviewVersions: true
+      
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore dependencies and tools'
+    inputs:
+      command: restore
+      projects: 'src/Services/Catalog/Catalog.API/Catalog.API.csproj'
+      nugetConfigPath: 'src/NuGet.config'
+      
+  - task: DotNetCoreCLI@2
+    displayName: 'Build a project and dependencies'
+    inputs:
+      command: build
+      projects: 'src/Services/Catalog/Catalog.API/Catalog.API.csproj'
+      arguments: '--configuration debug'
+      
+  - task: DotNetCoreCLI@2
+    displayName: 'Execute unit tests.'
+    inputs:
+      command: 'test'
+      arguments: '--configuration debug --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
+      publishTestResults: true
+      projects: 'src/Services/Catalog/Catalog.UnitTests/Catalog.UnitTests.csproj'
+      
+  - task: PublishCodeCoverageResults@1
+    displayName: 'Publish code coverage report'
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+      
+  - task: BuildQualityChecks@9
+    displayName: 'Check build quality'
+    inputs:
+      checkCoverage: true
+      coverageType: lines
